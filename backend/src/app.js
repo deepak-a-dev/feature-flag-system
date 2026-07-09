@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { authenticate } = require("./middleware/auth");
+const superAdminRoutes = require("./routes/superAdmin");
 
 // Builds and configures the Express application.
 // Kept separate from server.js so it can be imported in tests
@@ -21,6 +22,8 @@ function createApp() {
   app.get("/api/whoami", authenticate, (req, res) => {
     res.json({ user: req.user });
   });
+
+  app.use("/api/superadmin", superAdminRoutes);
 
   return app;
 }

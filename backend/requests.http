@@ -1,0 +1,65 @@
+@baseUrl = http://localhost:4000
+
+### 1. Super Admin login (correct credentials) -> expect 200 + token
+# @name login
+POST {{baseUrl}}/api/superadmin/login
+Content-Type: application/json
+
+{
+  "email": "{{$dotenv SUPER_ADMIN_EMAIL}}",
+  "password": "{{$dotenv SUPER_ADMIN_PASSWORD}}"
+}
+
+### Capture the token from request #1's response (used by requests below)
+@token = {{login.response.body.token}}
+
+### 2. Super Admin login (wrong password) -> expect 401
+POST {{baseUrl}}/api/superadmin/login
+Content-Type: application/json
+
+{
+  "email": "{{$dotenv SUPER_ADMIN_EMAIL}}",
+  "password": "wrong"
+}
+
+### 3. Create organization "Acme" -> expect 201
+POST {{baseUrl}}/api/superadmin/orgs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Acme"
+}
+
+### 4. Create organization "Globex" -> expect 201
+POST {{baseUrl}}/api/superadmin/orgs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Globex"
+}
+
+### 5. List all organizations -> expect array of orgs
+GET {{baseUrl}}/api/superadmin/orgs
+Authorization: Bearer {{token}}
+
+### 6. Create org WITHOUT token -> expect 401
+POST {{baseUrl}}/api/superadmin/orgs
+Content-Type: application/json
+
+{
+  "name": "Hacker"
+}
+
+### 7. Create duplicate org "Acme" again -> expect 409
+POST {{baseUrl}}/api/superadmin/orgs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Acme"
+}
+
+### 8. Health check (public, no auth)
+GET {{baseUrl}}/api/health
