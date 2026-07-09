@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const db = require("../db");
 const { signToken } = require("../utils/token");
 const { authenticate, requireRole } = require("../middleware/auth");
@@ -19,41 +20,43 @@ router.post("/login", (req, res) => {
   if (!ok) {
     return res.status(401).json({ error: "Invalid super admin credentials" });
   }
-  // Token carries only the role — no org, since the super admin is global.
   res.json({ token: signToken({ role: "super_admin" }) });
 });
 
-// Everything below this line requires a valid super_admin token.
+
+// Everything below this requires a valid super_admin token.
 // (router.use applies to routes declared AFTER it, so /login stays public.)
 router.use(authenticate, requireRole("super_admin"));
 
-// POST /api/superadmin/orgs — create an organization
+// POST /api/superadmin/orgs — create an organization + generate its shared signup code
 router.post("/orgs", (req, res) => {
   const { name } = req.body || {};
   if (!name || !name.trim()) {
     return res.status(400).json({ error: "Organization name is required" });
   }
+  // Random shared invite code the super admin distributes to that org's admins.
+  const signupCode = crypto.randomBytes(6).toString("hex"); // 12 hex chars
   try {
     const info = db
-      .prepare("INSERT INTO organizations (name) VALUES (?)")
-      .run(name.trim());
+      .prepare("INSERT INTO organizations (name, signup_code) VALUES (?, ?)")
+      .run(name.trim(), signupCode);
     const org = db
-      .prepare("SELECT id, name, created_at FROM organizations WHERE id = ?")
+      .prepare("SELECT id, name, signup_code, created_at FROM organizations WHERE id = ?")
       .get(info.lastInsertRowid);
     res.status(201).json(org);
   } catch (err) {
-    // The UNIQUE(name) constraint fires if the org already exists.
     if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
       return res.status(409).json({ error: "An organization with that name already exists" });
     }
-    throw err; // anything else → Express default 500
+    throw err;
   }
 });
 
-// GET /api/superadmin/orgs — list all organizations
+
+// GET /api/superadmin/orgs — list all organizations (includes signup_code for org_admin)
 router.get("/orgs", (req, res) => {
   const orgs = db
-    .prepare("SELECT id, name, created_at FROM organizations ORDER BY id")
+    .prepare("SELECT id, name, signup_code, created_at FROM organizations ORDER BY id")
     .all();
   res.json(orgs);
 });

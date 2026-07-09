@@ -22,7 +22,8 @@ Content-Type: application/json
   "password": "wrong"
 }
 
-### 3. Create organization "Acme" -> expect 201
+### 3. Create organization "Acme" -> expect 201 + signup_code
+# @name createAcme
 POST {{baseUrl}}/api/superadmin/orgs
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -30,6 +31,9 @@ Authorization: Bearer {{token}}
 {
   "name": "Acme"
 }
+
+### Capture Acme's shared signup code
+@acmeCode = {{createAcme.response.body.signup_code}}
 
 ### 4. Create organization "Globex" -> expect 201
 POST {{baseUrl}}/api/superadmin/orgs
@@ -63,3 +67,70 @@ Authorization: Bearer {{token}}
 
 ### 8. Health check (public, no auth)
 GET {{baseUrl}}/api/health
+
+
+### 9. Admin signup into "Acme" with valid code -> expect 201
+POST {{baseUrl}}/api/admin/signup
+Content-Type: application/json
+
+{
+  "email": "alice@acme.com",
+  "password": "alicepass",
+  "orgName": "Acme",
+  "signupCode": "{{acmeCode}}"
+}
+
+### 10. Admin signup with WRONG code -> expect 403
+POST {{baseUrl}}/api/admin/signup
+Content-Type: application/json
+
+{
+  "email": "mallory@acme.com",
+  "password": "mallorypass",
+  "orgName": "Acme",
+  "signupCode": "totally-wrong-code"
+}
+
+### 11. Admin signup with duplicate email (valid code) -> expect 409
+POST {{baseUrl}}/api/admin/signup
+Content-Type: application/json
+
+{
+  "email": "alice@acme.com",
+  "password": "whatever",
+  "orgName": "Acme",
+  "signupCode": "{{acmeCode}}"
+}
+
+### 12. Admin signup into a non-existent org -> expect 400
+POST {{baseUrl}}/api/admin/signup
+Content-Type: application/json
+
+{
+  "email": "bob@ghost.com",
+  "password": "bobpass",
+  "orgName": "GhostCorp",
+  "signupCode": "anything"
+}
+
+### 13. Admin login (correct) -> expect 200 + token
+# @name adminLogin
+POST {{baseUrl}}/api/admin/login
+Content-Type: application/json
+
+{
+  "email": "alice@acme.com",
+  "password": "alicepass"
+}
+
+### Capture the admin token (used in Phase 4B for flag CRUD)
+@adminToken = {{adminLogin.response.body.token}}
+
+### 14. Admin login (wrong password) -> expect 401
+POST {{baseUrl}}/api/admin/login
+Content-Type: application/json
+
+{
+  "email": "alice@acme.com",
+  "password": "nope"
+}

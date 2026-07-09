@@ -1,8 +1,9 @@
 -- ORGANIZATIONS: the tenants. Everything else hangs off these.
 CREATE TABLE IF NOT EXISTS organizations (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  name       TEXT NOT NULL UNIQUE,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  name        TEXT NOT NULL UNIQUE,
+  signup_code TEXT NOT NULL,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- ROLES: reference table. Seeded with 'org_admin' and 'end_user'.
