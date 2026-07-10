@@ -35,7 +35,8 @@ Authorization: Bearer {{token}}
 ### Capture Acme's shared signup code
 @acmeCode = {{createAcme.response.body.signup_code}}
 
-### 4. Create organization "Globex" -> expect 201
+### 4. Create organization "Globex" -> expect 201 + signup_code
+# @name createGlobex
 POST {{baseUrl}}/api/superadmin/orgs
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -43,6 +44,10 @@ Authorization: Bearer {{token}}
 {
   "name": "Globex"
 }
+
+### Capture Globex's signup code
+@globexCode = {{createGlobex.response.body.signup_code}}
+
 
 ### 5. List all organizations -> expect array of orgs
 GET {{baseUrl}}/api/superadmin/orgs
@@ -134,3 +139,103 @@ Content-Type: application/json
   "email": "alice@acme.com",
   "password": "nope"
 }
+
+
+### 15. Globex admin signup -> expect 201
+POST {{baseUrl}}/api/admin/signup
+Content-Type: application/json
+
+{
+  "email": "bob@globex.com",
+  "password": "bobpass",
+  "orgName": "Globex",
+  "signupCode": "{{globexCode}}"
+}
+
+### 16. Globex admin login -> expect 200 + token
+# @name globexLogin
+POST {{baseUrl}}/api/admin/login
+Content-Type: application/json
+
+{
+  "email": "bob@globex.com",
+  "password": "bobpass"
+}
+
+### Capture Globex admin token
+@globexToken = {{globexLogin.response.body.token}}
+
+### 17. Acme: create flag "dark_mode" (enabled) -> expect 201
+POST {{baseUrl}}/api/admin/flags
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "key": "dark_mode",
+  "enabled": true
+}
+
+### 18. Acme: create flag "beta_feature" (default disabled) -> expect 201
+POST {{baseUrl}}/api/admin/flags
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "key": "beta_feature"
+}
+
+### 19. Acme: duplicate "dark_mode" -> expect 409
+POST {{baseUrl}}/api/admin/flags
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "key": "dark_mode"
+}
+
+### 20. Acme: list flags -> expect 2 flags (dark_mode, beta_feature)
+GET {{baseUrl}}/api/admin/flags
+Authorization: Bearer {{adminToken}}
+
+### 21. Acme: disable "dark_mode" -> expect 200, enabled=false
+PATCH {{baseUrl}}/api/admin/flags/dark_mode
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "enabled": false
+}
+
+### 22. ISOLATION: Globex lists flags -> expect [] (cannot see Acme's)
+GET {{baseUrl}}/api/admin/flags
+Authorization: Bearer {{globexToken}}
+
+### 23. ISOLATION: Globex toggles Acme's "dark_mode" -> expect 404
+PATCH {{baseUrl}}/api/admin/flags/dark_mode
+Content-Type: application/json
+Authorization: Bearer {{globexToken}}
+
+{
+  "enabled": true
+}
+
+### 24. Create flag WITHOUT token -> expect 401
+POST {{baseUrl}}/api/admin/flags
+Content-Type: application/json
+
+{
+  "key": "sneaky"
+}
+
+### 25. Acme: create flag with missing key -> expect 400
+POST {{baseUrl}}/api/admin/flags
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "enabled": true
+}
+
+### 26. Acme: delete "beta_feature" -> expect 200
+DELETE {{baseUrl}}/api/admin/flags/beta_feature
+Authorization: Bearer {{adminToken}}

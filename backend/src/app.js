@@ -3,6 +3,7 @@ const cors = require("cors");
 const { authenticate } = require("./middleware/auth");
 const superAdminRoutes = require("./routes/superAdmin");
 const adminRoutes = require("./routes/admin");
+const flagRoutes = require("./routes/flags");
 
 // Builds and configures the Express application.
 // Kept separate from server.js so it can be imported in tests
@@ -26,6 +27,7 @@ function createApp() {
 
   app.use("/api/superadmin", superAdminRoutes);
   app.use("/api/admin", adminRoutes);
+  app.use("/api/admin/flags", flagRoutes);
 
   return app;
 }
