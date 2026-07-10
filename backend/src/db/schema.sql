@@ -2,7 +2,8 @@
 CREATE TABLE IF NOT EXISTS organizations (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   name        TEXT NOT NULL UNIQUE,
-  signup_code TEXT NOT NULL,
+  admin_code  TEXT NOT NULL UNIQUE,
+  user_code   TEXT NOT NULL UNIQUE,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

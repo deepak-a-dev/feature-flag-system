@@ -32,8 +32,9 @@ Authorization: Bearer {{token}}
   "name": "Acme"
 }
 
-### Capture Acme's shared signup code
-@acmeCode = {{createAcme.response.body.signup_code}}
+### Capture Acme's codes
+@acmeAdminCode = {{createAcme.response.body.admin_code}}
+@acmeUserCode = {{createAcme.response.body.user_code}}
 
 ### 4. Create organization "Globex" -> expect 201 + signup_code
 # @name createGlobex
@@ -45,8 +46,9 @@ Authorization: Bearer {{token}}
   "name": "Globex"
 }
 
-### Capture Globex's signup code
-@globexCode = {{createGlobex.response.body.signup_code}}
+### Capture Globex's codes
+@globexAdminCode = {{createGlobex.response.body.admin_code}}
+@globexUserCode = {{createGlobex.response.body.user_code}}
 
 
 ### 5. List all organizations -> expect array of orgs
@@ -81,8 +83,7 @@ Content-Type: application/json
 {
   "email": "alice@acme.com",
   "password": "alicepass",
-  "orgName": "Acme",
-  "signupCode": "{{acmeCode}}"
+  "signupCode": "{{acmeAdminCode}}"
 }
 
 ### 10. Admin signup with WRONG code -> expect 403
@@ -92,30 +93,26 @@ Content-Type: application/json
 {
   "email": "mallory@acme.com",
   "password": "mallorypass",
-  "orgName": "Acme",
   "signupCode": "totally-wrong-code"
 }
 
-### 11. Admin signup with duplicate email (valid code) -> expect 409
+### 11. ESCALATION: admin signup using Acme's USER code -> expect 403
 POST {{baseUrl}}/api/admin/signup
 Content-Type: application/json
 
-{
-  "email": "alice@acme.com",
-  "password": "whatever",
-  "orgName": "Acme",
-  "signupCode": "{{acmeCode}}"
+{ "email": "sneaky@acme.com", 
+  "password": "sneakypass", 
+  "signupCode": "{{acmeUserCode}}" 
 }
 
-### 12. Admin signup into a non-existent org -> expect 400
+### 12. Admin signup duplicate email (valid admin code) -> expect 409
 POST {{baseUrl}}/api/admin/signup
 Content-Type: application/json
 
-{
-  "email": "bob@ghost.com",
-  "password": "bobpass",
-  "orgName": "GhostCorp",
-  "signupCode": "anything"
+{ 
+  "email": "alice@acme.com", 
+  "password": "whatever", 
+  "signupCode": "{{acmeAdminCode}}" 
 }
 
 ### 13. Admin login (correct) -> expect 200 + token
@@ -141,15 +138,14 @@ Content-Type: application/json
 }
 
 
-### 15. Globex admin signup -> expect 201
+### 15. Globex admin signup (valid admin code) -> expect 201
 POST {{baseUrl}}/api/admin/signup
 Content-Type: application/json
 
-{
-  "email": "bob@globex.com",
-  "password": "bobpass",
-  "orgName": "Globex",
-  "signupCode": "{{globexCode}}"
+{ 
+  "email": "bob@globex.com", 
+  "password": "bobpass", 
+  "signupCode": "{{globexAdminCode}}" 
 }
 
 ### 16. Globex admin login -> expect 200 + token
@@ -239,3 +235,78 @@ Authorization: Bearer {{adminToken}}
 ### 26. Acme: delete "beta_feature" -> expect 200
 DELETE {{baseUrl}}/api/admin/flags/beta_feature
 Authorization: Bearer {{adminToken}}
+
+
+### 27. End-user signup into Acme (valid user code) -> expect 201
+POST {{baseUrl}}/api/user/signup
+Content-Type: application/json
+
+{ 
+  "email": "eve@acme.com", 
+  "password": "evepass", 
+  "signupCode": "{{acmeUserCode}}" 
+  }
+
+### 28. ESCALATION (reverse): user signup using Acme's ADMIN code -> expect 403
+POST {{baseUrl}}/api/user/signup
+Content-Type: application/json
+
+{ 
+  "email": "eve2@acme.com", 
+  "password": "evepass", 
+  "signupCode": "{{acmeAdminCode}}" 
+}
+
+### 29. End-user login -> expect 200 + token
+# @name userLogin
+POST {{baseUrl}}/api/user/login
+Content-Type: application/json
+
+{ 
+  "email": "eve@acme.com", 
+  "password": "evepass"
+}
+
+### Capture end-user token
+@userToken = {{userLogin.response.body.token}}
+
+### 30. Check "dark_mode" (currently disabled) -> expect enabled:false
+POST {{baseUrl}}/api/user/features/check
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{ "key": "dark_mode" }
+
+### 31. Admin re-enables "dark_mode" -> expect 200
+PATCH {{baseUrl}}/api/admin/flags/dark_mode
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "enabled": true }
+
+### 32. Check "dark_mode" again -> expect enabled:true
+POST {{baseUrl}}/api/user/features/check
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{ "key": "dark_mode" }
+
+### 33. Check unknown flag -> expect enabled:false (unknown = disabled)
+POST {{baseUrl}}/api/user/features/check
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{ "key": "no_such_flag" }
+
+### 34. Check WITHOUT token -> expect 401
+POST {{baseUrl}}/api/user/features/check
+Content-Type: application/json
+
+{ "key": "dark_mode" }
+
+### 35. Admin token on the end-user check -> expect 403 (wrong role)
+POST {{baseUrl}}/api/user/features/check
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "key": "dark_mode" }

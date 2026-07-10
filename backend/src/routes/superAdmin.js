@@ -28,20 +28,21 @@ router.post("/login", (req, res) => {
 // (router.use applies to routes declared AFTER it, so /login stays public.)
 router.use(authenticate, requireRole("super_admin"));
 
-// POST /api/superadmin/orgs — create an organization + generate its shared signup code
+// POST /api/superadmin/orgs — create an organization + generate 2 codes
 router.post("/orgs", (req, res) => {
   const { name } = req.body || {};
   if (!name || !name.trim()) {
     return res.status(400).json({ error: "Organization name is required" });
   }
   // Random shared invite code the super admin distributes to that org's admins.
-  const signupCode = crypto.randomBytes(6).toString("hex"); // 12 hex chars
+  const adminCode = crypto.randomBytes(6).toString("hex"); // 12 hex chars for admin signup
+  const userCode = crypto.randomBytes(6).toString("hex"); // 12 hex chars for user signup
   try {
     const info = db
-      .prepare("INSERT INTO organizations (name, signup_code) VALUES (?, ?)")
-      .run(name.trim(), signupCode);
+      .prepare("INSERT INTO organizations (name, admin_code, user_code) VALUES (?, ?, ?)")
+      .run(name.trim(), adminCode, userCode);
     const org = db
-      .prepare("SELECT id, name, signup_code, created_at FROM organizations WHERE id = ?")
+      .prepare("SELECT id, name, admin_code, user_code, created_at FROM organizations WHERE id = ?")
       .get(info.lastInsertRowid);
     res.status(201).json(org);
   } catch (err) {
@@ -53,10 +54,10 @@ router.post("/orgs", (req, res) => {
 });
 
 
-// GET /api/superadmin/orgs — list all organizations (includes signup_code for org_admin)
+// GET /api/superadmin/orgs — list all organizations (admin_code and user_code)
 router.get("/orgs", (req, res) => {
   const orgs = db
-    .prepare("SELECT id, name, signup_code, created_at FROM organizations ORDER BY id")
+    .prepare("SELECT id, name, admin_code, user_code, created_at FROM organizations ORDER BY id")
     .all();
   res.json(orgs);
 });
