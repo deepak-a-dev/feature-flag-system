@@ -5,6 +5,7 @@ const superAdminRoutes = require("./routes/superAdmin");
 const adminRoutes = require("./routes/admin");
 const flagRoutes = require("./routes/flags");
 const userRoutes = require("./routes/user");
+const path = require("path");
 
 // Builds and configures the Express application.
 // Kept separate from server.js so it can be imported in tests
@@ -30,6 +31,9 @@ function createApp() {
   app.use("/api/admin", adminRoutes);
   app.use("/api/admin/flags", flagRoutes);
   app.use("/api/user", userRoutes);
+  app.use("/super-admin", express.static(path.join(__dirname, "..", "..", "frontend", "super-admin")));
+  app.use("/admin", express.static(path.join(__dirname, "..", "..", "frontend", "admin")));
+  app.use("/user", express.static(path.join(__dirname, "..", "..", "frontend", "user")));
 
   return app;
 }
