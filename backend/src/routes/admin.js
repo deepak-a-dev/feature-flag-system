@@ -40,8 +40,10 @@ router.post("/login", (req, res) => {
 
   const user = db
     .prepare(
-      `SELECT u.id, u.password_hash, u.org_id, r.name AS role
-         FROM users u JOIN roles r ON r.id = u.role_id
+      `SELECT u.id, u.password_hash, u.org_id, r.name AS role, o.name AS org_name
+        FROM users u
+        JOIN roles r ON r.id = u.role_id
+        JOIN organizations o ON o.id = u.org_id
         WHERE u.email = ?`
     )
     .get(email.trim());
@@ -53,7 +55,7 @@ router.post("/login", (req, res) => {
     return res.status(403).json({ error: "Not an organization admin account" });
   }
 
-  res.json({ token: signToken({ userId: user.id, role: user.role, orgId: user.org_id }) });
+  // orgName rides along for display; orgId stays the thing used for authorization.
+  res.json({ token: signToken({ userId: user.id, role: user.role, orgId: user.org_id, orgName: user.org_name }) });
 });
-
 module.exports = router;
