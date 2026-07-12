@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feature Check — User</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 620px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; }
+    section { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    input[type=email], input[type=password], input[type=text] { padding: .45rem; margin: .2rem 0; width: 100%; box-sizing: border-box; }
+    button { padding: .5rem 1rem; cursor: pointer; margin-top: .5rem; }
+    .hidden { display: none; }
+    .msg { margin-top: .5rem; font-size: .9rem; }
+    .error { color: #c00; } .success { color: #080; }
+    a { cursor: pointer; color: #06c; text-decoration: underline; }
+    #check-result { margin-top: 1rem; font-size: 1.05rem; font-weight: bold; }
+    .enabled { color: #080; } .disabled { color: #999; }
+  </style>
+</head>
+<body>
+  <h1>Feature Check</h1>
+
+  <section id="signup-section">
+    <h2>Sign Up</h2>
+    <input id="su-email" type="email" placeholder="Email" />
+    <input id="su-password" type="password" placeholder="Password" />
+    <input id="su-code" type="text" placeholder="User invite code" />
+    <button id="signup-btn">Sign up</button>
+    <div id="signup-msg" class="msg"></div>
+    <p>Already have an account? <a id="to-login">Log in</a></p>
+  </section>
+
+  <section id="login-section" class="hidden">
+    <h2>Log In</h2>
+    <input id="li-email" type="email" placeholder="Email" />
+    <input id="li-password" type="password" placeholder="Password" />
+    <button id="login-btn">Log in</button>
+    <div id="login-msg" class="msg"></div>
+    <p>Need an account? <a id="to-signup">Sign up</a></p>
+  </section>
+
+  <section id="check-section" class="hidden">
+    <p id="org-banner" style="font-weight:bold; color:#333;"></p>
+    <h2>Check a Feature <button id="logout-btn" style="float:right">Log out</button></h2>
+    <input id="feature-key" type="text" placeholder="Feature key (e.g. dark_mode)" />
+    <button id="check-btn">Check</button>
+    <div id="check-result"></div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

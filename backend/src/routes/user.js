@@ -39,8 +39,10 @@ router.post("/login", (req, res) => {
   }
   const user = db
     .prepare(
-      `SELECT u.id, u.password_hash, u.org_id, r.name AS role
-         FROM users u JOIN roles r ON r.id = u.role_id
+      `SELECT u.id, u.password_hash, u.org_id, r.name AS role, o.name AS org_name
+         FROM users u
+         JOIN roles r ON r.id = u.role_id
+         JOIN organizations o ON o.id = u.org_id
         WHERE u.email = ?`
     )
     .get(email.trim());
@@ -50,7 +52,7 @@ router.post("/login", (req, res) => {
   if (user.role !== "end_user") {
     return res.status(403).json({ error: "Not an end-user account" });
   }
-  res.json({ token: signToken({ userId: user.id, role: user.role, orgId: user.org_id }) });
+  res.json({ token: signToken({ userId: user.id, role: user.role, orgId: user.org_id, orgName: user.org_name }) });
 });
 
 // POST /api/user/features/check — is a feature enabled for the caller's org?
@@ -64,6 +66,12 @@ router.post("/features/check", authenticate, requireRole("end_user"), (req, res)
     .get(req.user.orgId, key.trim());
   // Unknown flag => disabled. Safe default, matching how real flag SDKs behave.
   res.json({ key: key.trim(), enabled: flag ? Boolean(flag.enabled) : false });
+});
+
+// GET /api/user/me — validates the token server-side and returns identity.
+// The frontend calls this on load; a 401 means the token is expired/invalid.
+router.get("/me", authenticate, requireRole("end_user"), (req, res) => {
+  res.json({ userId: req.user.userId, orgId: req.user.orgId, orgName: req.user.orgName });
 });
 
 module.exports = router;
