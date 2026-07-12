@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- FEATURE_FLAGS: each flag belongs to one org. Same key can exist in
--- different orgs, but only once per org — that's the tenant isolation.
+-- different orgs, but only once per org - that's the tenant isolation.
 CREATE TABLE IF NOT EXISTS feature_flags (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   org_id     INTEGER NOT NULL REFERENCES organizations(id),

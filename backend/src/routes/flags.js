@@ -4,7 +4,7 @@ const { authenticate, requireRole } = require("../middleware/auth");
 
 const router = express.Router();
 
-// SQLite stores booleans as 0/1 — map to real JSON booleans at the API edge.
+// SQLite stores booleans as 0/1 - map to real JSON booleans at the API edge.
 function serializeFlag(row) {
   return { ...row, enabled: Boolean(row.enabled) };
 }
@@ -12,7 +12,7 @@ function serializeFlag(row) {
 // Every flag route requires an authenticated org admin.
 router.use(authenticate, requireRole("org_admin"));
 
-// POST /api/admin/flags — create a flag in the CALLER'S org.
+// POST /api/admin/flags - create a flag in the CALLER'S org.
 router.post("/", (req, res) => {
   const { key, enabled } = req.body || {};
   if (!key || !key.trim()) {
@@ -35,7 +35,7 @@ router.post("/", (req, res) => {
   }
 });
 
-// GET /api/admin/flags — list ONLY the caller's org's flags.
+// GET /api/admin/flags - list ONLY the caller's org's flags.
 router.get("/", (req, res) => {
   const flags = db
     .prepare("SELECT id, key, enabled, created_at, updated_at FROM feature_flags WHERE org_id = ? ORDER BY id")
@@ -43,13 +43,13 @@ router.get("/", (req, res) => {
   res.json(flags.map(serializeFlag));
 });
 
-// PATCH /api/admin/flags/:key — enable/disable a flag in the caller's org.
+// PATCH /api/admin/flags/:key - enable/disable a flag in the caller's org.
 router.patch("/:key", (req, res) => {
   const { enabled } = req.body || {};
   if (typeof enabled !== "boolean") {
     return res.status(400).json({ error: "'enabled' (boolean) is required" });
   }
-  // The WHERE clause scopes to org_id — so you can only ever update YOUR org's flag.
+  // The WHERE clause scopes to org_id - so you can only ever update YOUR org's flag.
   const info = db
     .prepare("UPDATE feature_flags SET enabled = ?, updated_at = datetime('now') WHERE org_id = ? AND key = ?")
     .run(enabled ? 1 : 0, req.user.orgId, req.params.key);
@@ -63,7 +63,7 @@ router.patch("/:key", (req, res) => {
   res.json(serializeFlag(flag));
 });
 
-// DELETE /api/admin/flags/:key — remove a flag from the caller's org.
+// DELETE /api/admin/flags/:key - remove a flag from the caller's org.
 router.delete("/:key", (req, res) => {
   const info = db
     .prepare("DELETE FROM feature_flags WHERE org_id = ? AND key = ?")

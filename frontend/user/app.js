@@ -6,7 +6,7 @@ const loginSection = document.getElementById("login-section");
 const checkSection = document.getElementById("check-section");
 const getToken = () => localStorage.getItem(TOKEN_KEY);
 
-// Decode JWT payload for DISPLAY only — server still verifies the signature.
+// Decode JWT payload for DISPLAY only - server still verifies the signature.
 function decodeToken(token) {
   try {
     let b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");

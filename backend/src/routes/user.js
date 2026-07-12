@@ -8,13 +8,13 @@ const router = express.Router();
 
 const END_USER_ROLE = db.prepare("SELECT id FROM roles WHERE name = ?").get("end_user");
 
-// POST /api/user/signup — register an end user via the org's USER code.
+// POST /api/user/signup - register an end user via the org's USER code.
 router.post("/signup", (req, res) => {
   const { email, password, signupCode } = req.body || {};
   if (!email || !password || !signupCode) {
     return res.status(400).json({ error: "email, password, and signupCode are required" });
   }
-  // Looks up by user_code — so an ADMIN code won't work here, and vice-versa.
+  // Looks up by user_code - so an ADMIN code won't work here, and vice-versa.
   const org = db.prepare("SELECT id FROM organizations WHERE user_code = ?").get(signupCode);
   if (!org) {
     return res.status(403).json({ error: "Invalid signup code." });
@@ -31,7 +31,7 @@ router.post("/signup", (req, res) => {
   }
 });
 
-// POST /api/user/login — authenticate an end user, issue a token.
+// POST /api/user/login - authenticate an end user, issue a token.
 router.post("/login", (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
@@ -55,7 +55,7 @@ router.post("/login", (req, res) => {
   res.json({ token: signToken({ userId: user.id, role: user.role, orgId: user.org_id, orgName: user.org_name }) });
 });
 
-// POST /api/user/features/check — is a feature enabled for the caller's org?
+// POST /api/user/features/check - is a feature enabled for the caller's org?
 router.post("/features/check", authenticate, requireRole("end_user"), (req, res) => {
   const { key } = req.body || {};
   if (!key || !key.trim()) {
@@ -68,7 +68,7 @@ router.post("/features/check", authenticate, requireRole("end_user"), (req, res)
   res.json({ key: key.trim(), enabled: flag ? Boolean(flag.enabled) : false });
 });
 
-// GET /api/user/me — validates the token server-side and returns identity.
+// GET /api/user/me - validates the token server-side and returns identity.
 // The frontend calls this on load; a 401 means the token is expired/invalid.
 router.get("/me", authenticate, requireRole("end_user"), (req, res) => {
   res.json({ userId: req.user.userId, orgId: req.user.orgId, orgName: req.user.orgName });

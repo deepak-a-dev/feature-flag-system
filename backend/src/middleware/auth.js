@@ -13,7 +13,7 @@ function authenticate(req, res, next) {
 
   try {
     req.user = verifyToken(token); // { userId, role, orgId, iat, exp }
-    next();                        // token valid — proceed to the route
+    next();                        // token valid - proceed to the route
   } catch (err) {
     // Covers bad signature AND expired token (jwt.verify throws for both)
     return res.status(401).json({ error: "Invalid or expired token" });
@@ -21,7 +21,7 @@ function authenticate(req, res, next) {
 }
 
 // AUTHORIZATION: "are you allowed?"
-// A middleware *factory* — returns a guard that only lets through users whose
+// A middleware *factory* - returns a guard that only lets through users whose
 // role is in the allowed list. Must run AFTER authenticate (needs req.user).
 function requireRole(...allowedRoles) {
   return (req, res, next) => {

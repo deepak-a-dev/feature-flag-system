@@ -8,7 +8,7 @@ const router = express.Router();
 // Resolve the 'org_admin' role id once at startup.
 const ORG_ADMIN_ROLE = db.prepare("SELECT id FROM roles WHERE name = ?").get("org_admin");
 
-// POST /api/admin/signup — register an org-admin using the org's admin code.
+// POST /api/admin/signup - register an org-admin using the org's admin code.
 router.post("/signup", (req, res) => {
   const { email, password, signupCode } = req.body || {};
   if (!email || !password || !signupCode) {
@@ -31,7 +31,7 @@ router.post("/signup", (req, res) => {
   }
 });
 
-// POST /api/admin/login — authenticate an existing org-admin, issue a token.
+// POST /api/admin/login - authenticate an existing org-admin, issue a token.
 router.post("/login", (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) {

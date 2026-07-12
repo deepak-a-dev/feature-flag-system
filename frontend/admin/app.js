@@ -6,7 +6,7 @@ const loginSection = document.getElementById("login-section");
 const dashboardSection = document.getElementById("dashboard-section");
 const getToken = () => localStorage.getItem(TOKEN_KEY);
 
-// Read the JWT payload in the browser. NOTE: this is for DISPLAY only —
+// Read the JWT payload in the browser. NOTE: this is for DISPLAY only -
 // never trust client-decoded claims for security; the server verifies the signature.
 function decodeToken(token) {
   try {

@@ -9,11 +9,11 @@ const db = new Database(dbPath);
 
 // CRITICAL: SQLite disables foreign-key enforcement by default, and it must
 // be turned on per connection. Without this, our REFERENCES constraints
-// would be silently ignored. (Common gotcha — good to know.)
+// would be silently ignored. (Common gotcha - good to know.)
 db.pragma("foreign_keys = ON");
 
 // Apply the schema. CREATE TABLE IF NOT EXISTS makes this safe to run every
-// startup — existing tables are left untouched.
+// startup - existing tables are left untouched.
 const schema = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf-8");
 db.exec(schema);
 
