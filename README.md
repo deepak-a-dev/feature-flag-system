@@ -17,17 +17,28 @@ strictly isolated from every other organization's.
 
 **Step 1.** Clone the repository and move into the backend folder:
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/deepak-a-dev/feature-flag-system.git
 cd feature-flag-system/backend
 ```
+
+> **No Git?** You can instead download the project as a ZIP from the GitHub repo page (the
+> green **Code** button, then **Download ZIP**) and extract it. Note: the ZIP has no `.git`
+> folder (so no `git pull` for updates), and GitHub names the extracted folder
+> `feature-flag-system-main`, so in that case use `cd feature-flag-system-main/backend`.
 
 **Step 2.** Install dependencies (from the `feature-flag-system/backend` directory; Step 1 put you there):
 ```bash
 npm install
 ```
 
-**Step 3.** Set up the required **environment variables** by creating a `backend/.env` file
-(see the [section below](#-environment-variables)).
+> **Troubleshooting:** If `npm install` reports that `better-sqlite3`'s build scripts were
+> skipped (newer npm versions block native-module builds by default), run
+> `npm rebuild better-sqlite3` to compile it (approve the build if npm prompts). The approval
+> is already committed, so most setups won't hit this.
+
+**Step 3.** Inside the `backend` folder, create a new file named `.env` and fill in the
+required settings. See [Environment variables](#-environment-variables) below for the exact
+keys and how to generate a `JWT_SECRET`, then come back and continue.
 
 **Step 4.** Start the app from the `backend/` directory:
 ```bash
@@ -35,6 +46,9 @@ npm run dev     # development (auto-restart via nodemon)
    (or)
 npm start       # plain node
 ```
+
+Once it starts, the terminal prints `Server listening on http://localhost:4000`, which
+confirms the app is running.
 
 **Step 5.** Everything is served from `http://localhost:4000`: the API **and** all three
 frontends:
@@ -49,8 +63,36 @@ Health check: [`http://localhost:4000/api/health`](http://localhost:4000/api/hea
 
 > On first run, the SQLite database (`backend/data.db`) is created automatically, the schema
 > is applied, and the two roles (`org_admin`, `end_user`) are seeded. Nothing to configure.
+> To open and inspect `data.db` (optional; the app runs fine without it), install a SQLite
+> viewer such as the **"SQLite Viewer"** VS Code extension by Florian Klampfer, or the
+> standalone **DB Browser for SQLite**.
 
-### 🔑 Environment variables
+**Step 6. Try it.** With the server running, walk the full flow in the browser:
+  1. In the **Super-Admin** console, log in with your `.env` credentials and create an
+     organization. The console displays that org's two invite codes: an **admin code** and a
+     **user code**. **Copy both** (you will paste them in the next steps).
+  2. In the **Admin** console, click **Sign up**, enter an email and password, and **paste the
+     org's admin code** into the invite-code field. Then log in and create/toggle/delete
+     feature flags.
+  3. In the **User** console, click **Sign up**, enter an email and password, and **paste the
+     org's user code** into the invite-code field. Then log in and check whether a feature
+     key is enabled for your organization.
+
+> **About the invite codes:** signup is gated by a code. Each organization has two codes (an
+> admin code and a user code); admins sign up with the admin code and end users with the user
+> code. For *why* there are two codes and how they prevent one role from impersonating
+> another, see [Authentication & Tenant Isolation](#-authentication--tenant-isolation) below.
+
+> **Prefer the API directly?** Open [`backend/requests.http`](backend/requests.http) in VS
+> Code (install & open with the **REST Client** extension by Huachao Mao) and send the
+> requests top-to-bottom. It drives the whole API end-to-end, including the tenant-isolation
+> and privilege-escalation checks. Secrets are read from `.env` via `{{$dotenv ...}}`, so no
+> credentials live in the file. See the [API Reference](#-api-reference) below for the full
+> endpoint list.
+
+---
+
+## 🔑 Environment variables
 
 The app reads its config/secrets from a `backend/.env` file (loaded via `dotenv`).
 `PORT` and `JWT_EXPIRES_IN` have sensible defaults; the rest you **must** set.
@@ -68,7 +110,7 @@ Create `backend/.env` (this file is **gitignored** and must not be committed). C
 ```
 JWT_SECRET=<paste a generated secret here>
 SUPER_ADMIN_EMAIL=superadmin@example.com
-SUPER_ADMIN_PASSWORD=change-me
+SUPER_ADMIN_PASSWORD=<enter your password here>
 PORT=4000
 JWT_EXPIRES_IN=2h
 ```
@@ -89,36 +131,40 @@ openssl rand -hex 32
 $b = [byte[]]::new(32); [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); ($b | ForEach-Object { $_.ToString('x2') }) -join ''
 ```
 
-### ▶️ Try it (quick smoke test)
+---
 
-There are two ways to exercise the system. Use **either** one.
+## 📡 API Reference
 
-**Option A: In the browser.** Open the three consoles above and follow the flow:
-  1. Log into the **Super-Admin** console with your `.env` credentials, then create an
-     organization. The console displays that org's two invite codes: an **admin code** and a
-     **user code**. **Copy both** (you will paste them in the next steps).
-  2. In the **Admin** console, click **Sign up**, enter an email and password, and **paste the
-     org's admin code** into the invite-code field. Then log in and create/toggle/delete
-     feature flags.
-  3. In the **User** console, click **Sign up**, enter an email and password, and **paste the
-     org's user code** into the invite-code field. Then log in and check whether a feature
-     key is enabled for your organization.
+All request/response bodies are JSON. Protected routes require an
+`Authorization: Bearer <token>` header.
 
-> **About the invite codes:** signup is gated by a code. Each organization has two codes (an
-> admin code and a user code); admins sign up with the admin code and end users with the user
-> code. For *why* there are two codes and how they prevent one role from impersonating
-> another, see [Authentication & Tenant Isolation](#-authentication--tenant-isolation) below.
+### Super Admin
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/superadmin/login` | public | Log in with static credentials |
+| POST | `/api/superadmin/orgs` | super_admin | Create an organization (returns its two codes) |
+| GET | `/api/superadmin/orgs` | super_admin | List organizations |
 
-> **About the endpoints:** for the complete list of API endpoints and which ones require
-> authentication, see the [API Reference](#-api-reference) below.
+### Org Admin
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/admin/signup` | public | Sign up using the org's admin code |
+| POST | `/api/admin/login` | public | Log in |
+| POST | `/api/admin/flags` | org_admin | Create a flag in the caller's org |
+| GET | `/api/admin/flags` | org_admin | List the caller's org's flags |
+| PATCH | `/api/admin/flags/:key` | org_admin | Enable/disable a flag |
+| DELETE | `/api/admin/flags/:key` | org_admin | Delete a flag |
 
-**OR**
+### End User
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/user/signup` | public | Sign up using the org's user code |
+| POST | `/api/user/login` | public | Log in |
+| POST | `/api/user/features/check` | end_user | Check if a feature is enabled for the caller's org |
+| GET | `/api/user/me` | end_user | Validate the current session (used by the frontend on load) |
 
-**Option B: Via REST Client.** Open [`backend/requests.http`](backend/requests.http) in VS
-Code (install & open with the **REST Client** extension by Huachao Mao) and send the requests
-top-to-bottom. It drives the whole API end-to-end, including the tenant-isolation and
-privilege-escalation checks. Secrets are read from `.env` via `{{$dotenv ...}}`, so no
-credentials live in the file.
+Unknown feature keys return `{ enabled: false }`, a fail-safe default matching how real
+feature-flag systems behave.
 
 ---
 
@@ -249,41 +295,6 @@ Signup looks the organization up **by the code**, and each endpoint validates on
 code. This prevents privilege escalation: an end user who holds only the `user_code` cannot
 register through the admin endpoint (the codes don't match), and vice-versa. In production
 these manually-distributed codes would be replaced by emailed, expiring invite links.
-
----
-
-## 📡 API Reference
-
-All request/response bodies are JSON. Protected routes require an
-`Authorization: Bearer <token>` header.
-
-### Super Admin
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/superadmin/login` | public | Log in with static credentials |
-| POST | `/api/superadmin/orgs` | super_admin | Create an organization (returns its two codes) |
-| GET | `/api/superadmin/orgs` | super_admin | List organizations |
-
-### Org Admin
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/admin/signup` | public | Sign up using the org's admin code |
-| POST | `/api/admin/login` | public | Log in |
-| POST | `/api/admin/flags` | org_admin | Create a flag in the caller's org |
-| GET | `/api/admin/flags` | org_admin | List the caller's org's flags |
-| PATCH | `/api/admin/flags/:key` | org_admin | Enable/disable a flag |
-| DELETE | `/api/admin/flags/:key` | org_admin | Delete a flag |
-
-### End User
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/user/signup` | public | Sign up using the org's user code |
-| POST | `/api/user/login` | public | Log in |
-| POST | `/api/user/features/check` | end_user | Check if a feature is enabled for the caller's org |
-| GET | `/api/user/me` | end_user | Validate the current session (used by the frontend on load) |
-
-Unknown feature keys return `{ enabled: false }`, a fail-safe default matching how real
-feature-flag systems behave.
 
 ---
 
