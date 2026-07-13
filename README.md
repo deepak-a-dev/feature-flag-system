@@ -10,7 +10,37 @@ strictly isolated from every other organization's.
 
 ---
 
-## 🚀 Getting Started (local)
+## Self-Assessment
+
+The project is graded below across the four categories from the assignment. Scores reflect
+the scope (a one-week technical assessment); each entry names the strengths and the main gap,
+since honest self-assessment is part of the exercise.
+
+**Overall:** strongest on readability and structure (the primary focus); solid on performance
+and stability for this scope; automated test coverage is the clearest area to improve.
+
+### Performance: 8/10
+- **Strengths:** For the scope of this system, performance is strong. Database access is efficient: all queries use prepared statements and hit indexed columns (primary keys and UNIQUE constraints), with no N+1 query patterns. Express layer is deliberately minimal. This comfortably handles the expected load, and the frontends are static files served directly by the backend.
+- **Context:** SQLite was a deliberate choice for the context: a demo/interview project with a one-week deadline, where fast setup and easy review matter most. It needs no database server, so it builds quickly and a reviewer can clone and run the whole project with a single command
+- **Next step:** PostgreSQL with connection pooling and caching for feature-flag reads to scale.
+
+### Readability & Maintainability: 9/10
+- **Primary focus:** the project's purpose is to explain and reason about the work, so clarity was the top priority.
+- **Strengths:** clear layered directory structure (`routes`, `middleware`, `utils`, `db`); small single-responsibility modules; concise inline comments; thorough README, API, and data-model docs; consistent conventions; one shared frontend pattern.
+- **Gap:** minor duplication (near-identical admin/user login handlers) and per-route rather than centralized error handling; the first refactors to make.
+
+### Stability: 7/10
+- **Strengths:** edge cases handled deliberately; every endpoint validates input and returns the right status code with a helpful message (invalid data, duplicates, wrong credentials, unauthorized access); safe defaults (flags default off, unknown flag reads disabled); all covered by the test requests.
+- **Gap / next step:** The main gap is, there is no single global error handler for truly unexpected failures, so an unforeseen error would fall back to Express's default response instead of a clean message. Adding a central error-handling middleware would be a great addition.
+
+### Testability: 6/10
+- **Strengths:** test-friendly architecture (app importable without a port, pure utility functions, single swappable `db` module); a ~35-request `requests.http` suite covers the full system, including negatives (isolation, escalation both ways, wrong-role and unauthenticated access, invalid input).
+- **Gap:** no automated unit or integration tests yet; current coverage is thorough but manual, a conscious trade-off under the one-week deadline.
+- **Next step:** automated unit tests for utils/middleware plus integration tests for route flows; essential for a production version.
+
+---
+
+##  Getting Started (local setup)
 
 > Requires **Node.js 18+ (LTS)** and **npm**. **No database to install.** SQLite creates
 > its file automatically on first run, and there are no migrations to run.
@@ -37,7 +67,7 @@ npm install
 > is already committed, so most setups won't hit this.
 
 **Step 3.** Inside the `backend` folder, create a new file named `.env` and fill in the
-required settings. See [Environment variables](#-environment-variables) below for the exact
+required settings. See [Environment variables](#environment-variables) below for the exact
 keys and how to generate a `JWT_SECRET`, then come back and continue.
 
 **Step 4.** Start the app from the `backend/` directory:
@@ -81,25 +111,25 @@ Health check: [`http://localhost:4000/api/health`](http://localhost:4000/api/hea
 > **About the invite codes:** signup is gated by a code. Each organization has two codes (an
 > admin code and a user code); admins sign up with the admin code and end users with the user
 > code. For *why* there are two codes and how they prevent one role from impersonating
-> another, see [Authentication & Tenant Isolation](#-authentication--tenant-isolation) below.
+> another, see [Authentication & Tenant Isolation](#authentication--tenant-isolation) below.
 
 > **Prefer the API directly?** Open [`backend/requests.http`](backend/requests.http) in VS
 > Code (install & open with the **REST Client** extension by Huachao Mao) and send the
 > requests top-to-bottom. It drives the whole API end-to-end, including the tenant-isolation
 > and privilege-escalation checks. Secrets are read from `.env` via `{{$dotenv ...}}`, so no
-> credentials live in the file. See the [API Reference](#-api-reference) below for the full
+> credentials live in the file. See the [API Reference](#api-reference) below for the full
 > endpoint list.
 
 ---
 
-## 🔑 Environment variables
+##  Environment variables
 
 The app reads its config/secrets from a `backend/.env` file (loaded via `dotenv`).
 `PORT` and `JWT_EXPIRES_IN` have sensible defaults; the rest you **must** set.
 
 | Variable | Description | Required? |
 |----------|-------------|-----------|
-| `JWT_SECRET` | A 256-bit hex secret for signing JWTs (generate one; see below ⬇️) | **required** |
+| `JWT_SECRET` | A 256-bit hex secret for signing JWTs (generate one; see below) | **required** |
 | `SUPER_ADMIN_EMAIL` | Super-admin login email (config-based; the super admin is **not** a DB user) | **required** |
 | `SUPER_ADMIN_PASSWORD` | Super-admin login password | **required** |
 | `PORT` | Port the server listens on | optional (default `4000`) |
@@ -133,7 +163,7 @@ $b = [byte[]]::new(32); [Security.Cryptography.RandomNumberGenerator]::Create().
 
 ---
 
-## 📡 API Reference
+##  API Reference
 
 All request/response bodies are JSON. Protected routes require an
 `Authorization: Bearer <token>` header.
@@ -168,7 +198,7 @@ feature-flag systems behave.
 
 ---
 
-## 🧱 Tech Stack
+##  Tech Stack
 
 | Layer | Choice | Why |
 |-------|--------|-----|
@@ -183,7 +213,7 @@ No ORM and no third-party auth provider are used, per the assignment constraints
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 feature-flag-system/
@@ -207,7 +237,7 @@ feature-flag-system/
 
 ---
 
-## 👥 Roles
+##  Roles
 
 | Role | Authentication | Capabilities |
 |------|----------------|--------------|
@@ -217,7 +247,7 @@ feature-flag-system/
 
 ---
 
-## 🗄️ Data Model
+##  Data Model
 
 Four persisted entities: **organizations**, **roles**, **users**, **feature_flags**.
 
@@ -273,7 +303,7 @@ Key points:
 
 ---
 
-## 🔐 Authentication & Tenant Isolation
+##  Authentication & Tenant Isolation
 
 - Passwords are hashed with **bcrypt** and never stored or returned in plaintext.
 - Login issues a **JWT** carrying `{ userId, role, orgId, orgName }`. Authorization decisions
@@ -298,7 +328,7 @@ these manually-distributed codes would be replaced by emailed, expiring invite l
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 `backend/requests.http` is a runnable test suite (VS Code **REST Client** extension by Huachao Mao). It
 walks the full system (super-admin login and org creation, admin/user signup and login,
@@ -314,7 +344,7 @@ automatically.
 
 ---
 
-## 🚧 Known Limitations & Future Work
+##  Known Limitations & Future Work
 
 - **Single access token** (no refresh tokens). Would add rotating refresh tokens for longer
   sessions without long-lived access tokens.
