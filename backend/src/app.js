@@ -1,6 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-const { authenticate } = require("./middleware/auth");
 const superAdminRoutes = require("./routes/superAdmin");
 const adminRoutes = require("./routes/admin");
 const flagRoutes = require("./routes/flags");
@@ -19,12 +18,6 @@ function createApp() {
   // Health-check endpoint - a trivial route to confirm the server is alive.
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", time: new Date().toISOString() });
-  });
-
-  // Gives back the identity decoded from caller's JWT.
-  // Protected by authenticate - handy for debugging token flow.
-  app.get("/api/whoami", authenticate, (req, res) => {
-    res.json({ user: req.user });
   });
 
   app.use("/api/superadmin", superAdminRoutes);

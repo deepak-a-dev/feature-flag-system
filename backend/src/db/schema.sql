@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS organizations (
   name        TEXT NOT NULL UNIQUE,
   admin_code  TEXT NOT NULL UNIQUE,
   user_code   TEXT NOT NULL UNIQUE,
-  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at  TEXT NOT NULL DEFAULT (datetime('now', '+5 hours', '30 minutes'))
 );
 
 -- ROLES: reference table. Seeded with 'org_admin' and 'end_user'.
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role_id       INTEGER NOT NULL REFERENCES roles(id),
   org_id        INTEGER NOT NULL REFERENCES organizations(id),
-  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at    TEXT NOT NULL DEFAULT (datetime('now', '+5 hours', '30 minutes'))
 );
 
 -- FEATURE_FLAGS: each flag belongs to one org. Same key can exist in
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS feature_flags (
   org_id     INTEGER NOT NULL REFERENCES organizations(id),
   key        TEXT NOT NULL,
   enabled    INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now', '+5 hours', '30 minutes')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now', '+5 hours', '30 minutes')),
   UNIQUE (org_id, key)
 );

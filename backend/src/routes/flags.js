@@ -51,7 +51,7 @@ router.patch("/:key", (req, res) => {
   }
   // The WHERE clause scopes to org_id - so you can only ever update YOUR org's flag.
   const info = db
-    .prepare("UPDATE feature_flags SET enabled = ?, updated_at = datetime('now') WHERE org_id = ? AND key = ?")
+    .prepare("UPDATE feature_flags SET enabled = ?, updated_at = datetime('now', '+5 hours', '30 minutes') WHERE org_id = ? AND key = ?")
     .run(enabled ? 1 : 0, req.user.orgId, req.params.key);
 
   if (info.changes === 0) {
