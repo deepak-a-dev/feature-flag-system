@@ -84,11 +84,14 @@ document.getElementById("check-btn").addEventListener("click", async () => {
   if (res.status === 401) { show(loginSection); return; }
   const data = await res.json();
   if (!res.ok) { result.textContent = data.error || "Failed"; result.className = "error"; return; }
-  if (data.enabled) {
-    result.textContent = `✓ "${data.key}" is ENABLED for your organization`;
+ if (!data.found) {
+    result.textContent = `"${data.key}" does not exist for your organization`;
+    result.className = "notfound";                
+  } else if (data.enabled) {
+    result.textContent = ` "${data.key}" is ENABLED for your organization`;
     result.className = "enabled";
   } else {
-    result.textContent = `✗ "${data.key}" is DISABLED for your organization`;
+    result.textContent = ` "${data.key}" is DISABLED for your organization`;
     result.className = "disabled";
   }
 });

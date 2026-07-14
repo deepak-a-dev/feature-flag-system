@@ -193,8 +193,6 @@ All request/response bodies are JSON. Protected routes require an
 | POST | `/api/user/features/check` | end_user | Check if a feature is enabled for the caller's org |
 | GET | `/api/user/me` | end_user | Validate the current session (used by the frontend on load) |
 
-Unknown feature keys return `{ enabled: false }`, a fail-safe default matching how real
-feature-flag systems behave.
 
 ---
 

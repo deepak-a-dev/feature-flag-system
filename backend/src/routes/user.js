@@ -64,8 +64,13 @@ router.post("/features/check", authenticate, requireRole("end_user"), (req, res)
   const flag = db
     .prepare("SELECT enabled FROM feature_flags WHERE org_id = ? AND key = ?")
     .get(req.user.orgId, key.trim());
-  // Unknown flag => disabled. Safe default, matching how real flag SDKs behave.
-  res.json({ key: key.trim(), enabled: flag ? Boolean(flag.enabled) : false });
+
+  // found = false -> flag does not exist in this org.
+  // found = true -> flag exists; enabled tells on/off.
+  if (!flag) {
+    return res.json({ key: key.trim(), found: false, enabled: false });
+  }
+  res.json({ key: key.trim(), found: true, enabled: Boolean(flag.enabled) });
 });
 
 // GET /api/user/me - validates the token server-side and returns identity.
