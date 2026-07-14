@@ -31,7 +31,7 @@ function createApp() {
   app.use("/api/admin", adminRoutes);
   app.use("/api/admin/flags", flagRoutes);
   app.use("/api/user", userRoutes);
-  app.use("/super-admin", express.static(path.join(__dirname, "..", "..", "frontend", "super-admin")));
+  app.use("/superadmin", express.static(path.join(__dirname, "..", "..", "frontend", "superadmin")));
   app.use("/admin", express.static(path.join(__dirname, "..", "..", "frontend", "admin")));
   app.use("/user", express.static(path.join(__dirname, "..", "..", "frontend", "user")));
 

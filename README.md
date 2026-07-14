@@ -85,7 +85,7 @@ frontends:
 
 | App | URL |
 |-----|-----|
-| Super-Admin console | http://localhost:4000/super-admin/ |
+| Super-Admin console | http://localhost:4000/superadmin/ |
 | Admin console | http://localhost:4000/admin/ |
 | User console | http://localhost:4000/user/ |
 
@@ -230,7 +230,7 @@ feature-flag-system/
 │   ├── package.json
 │   └── data.db            # SQLite database; auto-created on first `npm run` (gitignored)
 └── frontend/
-    ├── super-admin/       # create/list organizations
+    ├── superadmin/        # create/list organizations
     ├── admin/             # signup, login, flag management
     └── user/              # signup, login, feature check
 ```
